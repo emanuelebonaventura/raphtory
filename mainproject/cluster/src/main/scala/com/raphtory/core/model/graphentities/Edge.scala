@@ -14,12 +14,14 @@ object Edge {
       creationTime: Long,
       srcID: Long,
       dstID: Long,
+      srcLayerId : Long ,
+      dstLayerId: Long ,
       previousState: mutable.TreeMap[Long, Boolean],
       properties: ParTrieMap[String, Property],
       storage: EntityStorage
   ) = {
 
-    val e = new Edge(workerID, creationTime, srcID, dstID, initialValue = true, storage)
+    val e = new Edge(workerID, creationTime, srcID, dstID,srcLayerId,dstLayerId,initialValue = true, storage)
     e.previousState = previousState
     e.properties = properties
     e
@@ -30,7 +32,7 @@ object Edge {
 /**
   * Created by Mirate on 01/03/2017.
   */
-class Edge(workerID: Int, msgTime: Long, srcId: Long, dstId: Long, initialValue: Boolean, storage: EntityStorage)
+class Edge(workerID: Int, msgTime: Long, srcId: Long, dstId: Long, srcLayerId : Long , dstLayerId: Long,initialValue: Boolean, storage: EntityStorage)
         extends Entity(msgTime, initialValue, storage) {
 
   def killList(vKills: mutable.TreeMap[Long, Boolean]): Unit =
@@ -47,8 +49,11 @@ class Edge(workerID: Int, msgTime: Long, srcId: Long, dstId: Long, initialValue:
   def getSrcId: Long   = srcId
   def getDstId: Long   = dstId
   def getWorkerID: Int = workerID
+  def getSrcLayerId: Long = srcLayerId
+  def getDstLayerId: Long = dstLayerId
 
-//  def getPropertyValuesAfterTime(key : String,time:Long,window:Long) : Option[mutable.TreeMap[Long,Any]] = {
+
+  //  def getPropertyValuesAfterTime(key : String,time:Long,window:Long) : Option[mutable.TreeMap[Long,Any]] = {
 //    if (window == -1L)
 //      properties.get(key) match {
 //        case Some(p) => Some(p.previousState.filter(x => x._1 <= time))
@@ -79,7 +84,7 @@ class Edge(workerID: Int, msgTime: Long, srcId: Long, dstId: Long, initialValue:
         }
     //if(value==false)
     //  throw EntityRemovedAtTimeException(getId)
-    val edge = new Edge(-1, closestTime, srcId, dstId, value, storage)
+    val edge = new Edge(-1, closestTime, srcId, dstId, srcLayerId,dstLayerId,value, storage)
     for ((k, p) <- properties) {
       val value = p.valueAt(time)
       if (!(value equals ("")))

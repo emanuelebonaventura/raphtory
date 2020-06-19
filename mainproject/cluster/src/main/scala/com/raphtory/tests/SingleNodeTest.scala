@@ -44,8 +44,8 @@ object SingleNodeTest extends App {
     val end =   31525368897000L
 
     val jump =    3600000
-    var SpoutName = "com.raphtory.examples.gab.actors.GabExampleSpout"
-    var routerClassName = "com.raphtory.examples.gab.actors.GabUserGraphRouter"
+    var SpoutName = "com.raphtory.examples.ananke.KafkaSpout"
+    var routerClassName = "com.raphtory.examples.ananke.KafkaRouter"
 
 
   //track and trace test

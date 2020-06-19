@@ -75,7 +75,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processVertexAddRequest(req: TrackedVertexAdd): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    storage.vertexAdd(update.msgTime, update.srcID, vertexType = update.vType)
+    storage.vertexAdd(update.msgTime, update.srcID, vertexType = update.vType,layerId = update.layerId)
     routerUpdates.increment()
     vertexAddTrack(update.srcID, update.msgTime,req.routerID,req.messageID)
   }
@@ -83,7 +83,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processVertexAddWithPropertiesRequest(req: TrackedVertexAddWithProperties): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    storage.vertexAdd(update.msgTime, update.srcID, update.properties, update.vType)
+    storage.vertexAdd(update.msgTime, update.srcID, update.properties, update.vType,layerId = update.layerId)
     routerUpdates.increment()
     vertexAddTrack(update.srcID, update.msgTime,req.routerID,req.messageID)
   }
@@ -98,7 +98,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processEdgeAddRequest(req: TrackedEdgeAdd): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    val local = storage.edgeAdd(update.msgTime, update.srcID, update.dstID,req.routerID,req.messageID, edgeType = update.eType)
+    val local = storage.edgeAdd(update.msgTime, update.srcID, update.dstID,req.routerID,req.messageID, edgeType = update.eType, srcLayerId = update.srcLayerId,dstLayerId = update.dstLayerId)
     routerUpdates.increment()
     edgeAddTrack(update.srcID, update.dstID, update.msgTime,local,req.routerID,req.messageID)
   }
@@ -106,7 +106,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processEdgeAddWithPropertiesRequest(req: TrackedEdgeAddWithProperties): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    val local = storage.edgeAdd(update.msgTime, update.srcID, update.dstID,req.routerID,req.messageID, update.properties, update.eType)
+    val local = storage.edgeAdd(update.msgTime, update.srcID, update.dstID,req.routerID,req.messageID, update.properties, update.eType,srcLayerId = update.srcLayerId,dstLayerId = update.dstLayerId)
     routerUpdates.increment()
     edgeAddTrack(update.srcID, update.dstID, update.msgTime,local,req.routerID,req.messageID)
   }
@@ -120,14 +120,14 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processRemoteEdgeAddRequest(req: RemoteEdgeAdd): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteEdgeAdd(req.msgTime, req.srcID, req.dstID, req.properties, req.eType,req.routerID,req.routerTime)
+    storage.remoteEdgeAdd(req.msgTime, req.srcID, req.dstID, req.srcLayerId,req.dstLayerId,req.properties, req.eType,req.routerID,req.routerTime)
     remoteEdgeAddTrack(req.msgTime)
     interWorkerUpdates.increment()
   }
 
   def processRemoteEdgeAddNewRequest(req: RemoteEdgeAddNew): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteEdgeAddNew(req.msgTime, req.srcID, req.dstID, req.properties, req.kills, req.vType,req.routerID,req.routerTime)
+    storage.remoteEdgeAddNew(req.msgTime, req.srcID, req.dstID,req.srcLayerId,req.dstLayerId, req.properties, req.kills, req.vType,req.routerID,req.routerTime)
     remoteEdgeAddTrack(req.msgTime)
     interWorkerUpdates.increment()
   }
@@ -138,7 +138,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 //
   def processRemoteReturnDeathsRequest(req: RemoteReturnDeaths): Unit = { //when the new edge add is responded to we can say it is synced
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteReturnDeaths(req.msgTime, req.srcID, req.dstID, req.kills)
+    storage.remoteReturnDeaths(req.msgTime, req.srcID, req.dstID, req.kills,req.layerId)
     addToWatermarkQueue(req.routerID,req.routerTime,req.msgTime,safe=false)
   }
 
@@ -149,14 +149,14 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processDstAddForOtherWorkerRequest(req: DstAddForOtherWorker): Unit = { //local worker asking this one to deal with an incoming edge
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.vertexWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime)
+    storage.vertexWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime,layerId = req.layerId)
     storage.timings(req.msgTime)
     intraWorkerUpdates.increment()
   }
 
   def processDstResponseFromOtherWorkerRequest(req: DstResponseFromOtherWorker): Unit = { //local worker responded for a new edge so can watermark, if existing edge will just be an ack
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.vertexWorkerRequestEdgeHandler(req.msgTime, req.srcForEdge, req.dstID, req.removeList)
+    storage.vertexWorkerRequestEdgeHandler(req.msgTime, req.srcForEdge, req.dstID,req.layerId, req.removeList)
     addToWatermarkQueue(req.routerID,req.routerTime,req.msgTime,safe=false)
   }
 
@@ -164,7 +164,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processEdgeDeleteRequest(req: TrackedEdgeDelete): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    val local = storage.edgeRemoval(update.msgTime, update.srcID, update.dstID,req.routerID,req.messageID)
+    val local = storage.edgeRemoval(update.msgTime, update.srcID, update.dstID,update.srcLayerId,update.dstLayerId,req.routerID,req.messageID)
     edgeDeleteTrack(update.msgTime,local,req.routerID,req.messageID)
     routerUpdates.increment()
   }
@@ -178,21 +178,21 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processRemoteEdgeRemovalNewRequest(req: RemoteEdgeRemovalNew): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteEdgeRemovalNew(req.msgTime, req.srcID, req.dstID, req.kills,req.routerID,req.routerTime)
+    storage.remoteEdgeRemovalNew(req.msgTime, req.srcID, req.dstID,req.srcLayerId,req.dstLayerId, req.kills,req.routerID,req.routerTime)
     storage.timings(req.msgTime)
     interWorkerUpdates.increment()
   }
 
   def processRemoteEdgeRemovalRequest(req: RemoteEdgeRemoval): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteEdgeRemoval(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime)
+    storage.remoteEdgeRemoval(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime,layerId = req.layerId)
     storage.timings(req.msgTime)
     interWorkerUpdates.increment()
   }
 
   def processDstWipeForOtherWorkerRequest(req: DstWipeForOtherWorker): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.vertexWipeWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime)
+    storage.vertexWipeWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime,layerId = req.layerId)
     storage.timings(req.msgTime)
     intraWorkerUpdates.increment()
   }
@@ -201,7 +201,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
   def processVertexDeleteRequest(req: TrackedVertexDelete): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
     val update = req.update
-    val totalCount = storage.vertexRemoval(update.msgTime, update.srcID,req.routerID,req.messageID)
+    val totalCount = storage.vertexRemoval(update.msgTime, update.srcID,req.routerID,req.messageID,layerId = update.layerId)
     vertexDeleteTrack(update.srcID, update.msgTime,req.routerID,req.messageID,totalCount)
     routerUpdates.increment()
   }
@@ -227,20 +227,20 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processRemoteEdgeRemovalRequestFromVertex(req: RemoteEdgeRemovalFromVertex): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.remoteEdgeRemovalFromVertex(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime)
+    storage.remoteEdgeRemovalFromVertex(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime,layerId = req.layerId)
     storage.timings(req.msgTime)
     interWorkerUpdates.increment()
   }
 
   def processEdgeRemoveForOtherWorkerRequest(req: EdgeRemoveForOtherWorker): Unit = { //local worker has destination and needs this worker to sort the edge removal
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.edgeRemovalFromOtherWorker(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime)
+    storage.edgeRemovalFromOtherWorker(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime,layerId = req.layerId)
     intraWorkerUpdates.increment()
   }
 
   def processReturnEdgeRemovalRequest(req: ReturnEdgeRemoval): Unit = { //remote worker same as above
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.returnEdgeRemoval(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime)
+    storage.returnEdgeRemoval(req.msgTime, req.srcID, req.dstID,req.routerID,req.routerTime,layerId = req.layerId)
     interWorkerUpdates.increment()
   }
 
