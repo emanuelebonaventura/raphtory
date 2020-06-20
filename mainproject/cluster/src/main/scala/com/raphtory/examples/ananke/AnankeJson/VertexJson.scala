@@ -1,14 +1,14 @@
-package com.raphtory.examples.kafka.anankejson
+package com.raphtory.examples.ananke.anankejson
 
-
+import net.liftweb.json.JsonAST.JValue
 
 
 case class VertexJson(  command: String,
                        vertexId: Long,
                        msgTime: Long,
-                       Type: String,
+                        vertexType: String,
                       layerId: Long,
-                       properties: Map[String,Any])
+                       properties: Map[String,JValue])
 {
   def isEmptyMap(): Boolean ={
     properties.isEmpty

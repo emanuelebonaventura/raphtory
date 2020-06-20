@@ -1,15 +1,16 @@
-package com.raphtory.examples.kafka.anankejson
+package com.raphtory.examples.ananke.anankejson
+
+import net.liftweb.json.JsonAST.JValue
 
 
-
-case class EdgeJson( val command: String,
-                    val srcId: Long,
-                    val dstId: Long,
-                    val msgTime: Long,
-                    val Type: String,
-                    val srcLayerId: Long,
-                     val dstLayerId: Long,
-                     val properties: Map[String,Any]) {
+case class EdgeJson(  command: String,
+                     srcId: Long,
+                     dstId: Long,
+                     msgTime: Long,
+                      edgeType: String,
+                     srcLayerId: Long,
+                      dstLayerId: Long,
+                      properties: Map[String,JValue]) {
 
   def isEmptyMap(): Boolean ={
     properties.isEmpty

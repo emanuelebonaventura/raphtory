@@ -1,4 +1,4 @@
-package com.raphtory.examples.kafka
+package com.raphtory.examples.ananke
 
 
 
@@ -6,24 +6,23 @@ import com.raphtory.core.components.Router.RouterWorker
 import com.raphtory.core.model.communication.Type
 import com.raphtory.core.model.communication._
 import net.liftweb.json._
-
-import com.raphtory.examples.kafka.anankejson.VertexJson
-import com.raphtory.examples.kafka.anankejson.EdgeJson
+import com.raphtory.examples.ananke.anankejson.VertexJson
+import com.raphtory.examples.ananke.anankejson.EdgeJson
+import org.apache.jute.compiler.JLong
 
 
 
 class KafkaRouter(override val routerId: Int,override val workerID:Int, override val initialManagerCount: Int) extends RouterWorker {
-
+  implicit val formats = DefaultFormats
   def parseTuple(record: Any): Unit = {
 
-    implicit val formats = DefaultFormats
     val json = parse(record.asInstanceOf[String])
-    println(json)
 
-       "s" match {
-      case "EdgeAdd" =>   val edge = null
+
+    json.asInstanceOf[JObject].values.get("command") match {
+      case Some("EdgeAdd") =>   val edge = json.extract[EdgeJson]
                           AddNewEdge(edge)
-      case "VertexAdd"  =>  val vertex = null
+      case Some("VertexAdd")  =>  val vertex = json.extract[VertexJson]
                             AddNewVertex(vertex)
       case _          =>   println("message not recognized!")
     }
@@ -32,15 +31,15 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
 
   def AddNewVertex(vertex:  => VertexJson): Unit = {
-    if (vertex.isEmptyMap())  sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.Type)))
+    if (vertex.isEmptyMap())  sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType)))
     else {
       var pro = List[Property]()
       for ((k,v) <- vertex.properties) {
-        v match {
-          case v : java.lang.String => pro =  pro.+:( StringProperty(k,v.asInstanceOf[String]))
-          case v : java.lang.Long  => pro = pro.+:(LongProperty(k,v.asInstanceOf[Long]))
-          case v : java.lang.Integer  => pro = pro.+:(LongProperty(k,v.asInstanceOf[Int]))
-          case v : java.lang.Double => pro = pro.+:(DoubleProperty(k,v.asInstanceOf[Double]))
+       v match {
+         case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
+         case v : JLong => pro = pro.+:(LongProperty(k,v.extract[Long]))
+         case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Int]))
+         case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
           case _ => println("No type found!")
         }
       }
@@ -51,7 +50,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
           vertex.msgTime,
           vertex.vertexId,
           properties,
-          Type(vertex.Type)
+          Type(vertex.vertexType)
         )
       )
     }
@@ -59,15 +58,15 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
   def AddNewEdge(edge: => EdgeJson): Unit = {
 
-    if (edge.isEmptyMap()) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.Type)))
+    if (edge.isEmptyMap()) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType)))
     else {
       var pro = List[Property]()
       for ((k,v) <- edge.properties) {
         v match {
-          case v : java.lang.String => pro =  pro.+:( StringProperty(k,v.asInstanceOf[String]))
-          case v : java.lang.Long  => pro = pro.+:(LongProperty(k,v.asInstanceOf[Long]))
-          case v : java.lang.Integer  => pro = pro.+:(LongProperty(k,v.asInstanceOf[Int]))
-          case v : java.lang.Double => pro = pro.+:(DoubleProperty(k,v.asInstanceOf[Double]))
+          case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
+          case v : JLong => pro = pro.+:(LongProperty(k,v.extract[Long]))
+          case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Int]))
+          case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
           case _ => println("No type found!")
         }
       }
@@ -79,7 +78,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
           edge.srcId,
           edge.dstId,
           properties,
-          Type(edge.Type),
+          Type(edge.edgeType),
           edge.srcLayerId,
           edge.dstLayerId
         )
