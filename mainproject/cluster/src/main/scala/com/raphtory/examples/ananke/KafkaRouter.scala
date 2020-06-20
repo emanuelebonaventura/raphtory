@@ -5,10 +5,7 @@ package com.raphtory.examples.kafka
 import com.raphtory.core.components.Router.RouterWorker
 import com.raphtory.core.model.communication.Type
 import com.raphtory.core.model.communication._
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-
+import net.liftweb.json._
 
 import com.raphtory.examples.kafka.anankejson.VertexJson
 import com.raphtory.examples.kafka.anankejson.EdgeJson
@@ -19,13 +16,14 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
   def parseTuple(record: Any): Unit = {
 
-    val mapper = new ObjectMapper()
-    mapper.registerModule(DefaultScalaModule)
-    val command = mapper.readValue(record.asInstanceOf[String], classOf[ObjectNode]);
-    command.get("command").asText match {
-      case "EdgeAdd" =>   val edge =  mapper.readValue(record.asInstanceOf[String], classOf[EdgeJson])
+    implicit val formats = DefaultFormats
+    val json = parse(record.asInstanceOf[String])
+    println(json)
+
+       "s" match {
+      case "EdgeAdd" =>   val edge = null
                           AddNewEdge(edge)
-      case "VertexAdd"  =>  val vertex = mapper.readValue(record.asInstanceOf[String], classOf[VertexJson])
+      case "VertexAdd"  =>  val vertex = null
                             AddNewVertex(vertex)
       case _          =>   println("message not recognized!")
     }
