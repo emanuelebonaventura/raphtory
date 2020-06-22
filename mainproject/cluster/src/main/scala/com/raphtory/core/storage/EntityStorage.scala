@@ -208,6 +208,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
         vertexSearch(l)
       }
     }
+
     //todo decide with hamza which one to use
 
 //     vertex.incomingEdges.values.foreach {
@@ -238,7 +239,6 @@ class EntityStorage(partitionID:Int,workerID: Int) {
 //      case edge =>
 //        edge kill msgTime //outgoing edge always opperated by the same worker, therefore we can perform an action
 //    }
-
     val incomingCount = vertex.incomingEdges.map(edge => {
       edge._2 match {
         case edge@(remoteEdge: SplitEdge) =>

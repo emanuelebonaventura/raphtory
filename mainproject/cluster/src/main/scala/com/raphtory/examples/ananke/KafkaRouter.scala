@@ -5,6 +5,7 @@ package com.raphtory.examples.ananke
 import com.raphtory.core.components.Router.RouterWorker
 import com.raphtory.core.model.communication.Type
 import com.raphtory.core.model.communication._
+import com.raphtory.examples.ananke.AnankeJson.{EdgeJsonRemove, VertexJsonRemove}
 import net.liftweb.json._
 import com.raphtory.examples.ananke.anankejson.VertexJson
 import com.raphtory.examples.ananke.anankejson.EdgeJson
@@ -22,9 +23,9 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
                                 AddNewEdge(edge)
       case Some("VertexAdd")  =>  val vertex = json.extract[VertexJson]
                                   AddNewVertex(vertex)
-      case Some("VertexDelete")  =>  val vertex = json.extract[VertexJson]
+      case Some("VertexDelete")  =>  val vertex = json.extract[VertexJsonRemove]
                                     DeleteVertex(vertex)
-      case Some("EdgeDelete") =>   val edge = json.extract[EdgeJson]
+      case Some("EdgeDelete") =>   val edge = json.extract[EdgeJsonRemove]
                                  DeleteEdge(edge)
       case _          =>   println("message not recognized!")
     }
@@ -88,7 +89,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
     }
   }
 
-  def DeleteVertex(vertex:  => VertexJson): Unit = {
+  def DeleteVertex(vertex:  => VertexJsonRemove): Unit = {
       sendGraphUpdate(
         VertexDelete(
           vertex.msgTime,
@@ -99,7 +100,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
   }
 
 
-  def DeleteEdge(edge:  => EdgeJson): Unit = {
+  def DeleteEdge(edge:  => EdgeJsonRemove): Unit = {
     sendGraphUpdate(
       EdgeDelete(
         edge.msgTime,
