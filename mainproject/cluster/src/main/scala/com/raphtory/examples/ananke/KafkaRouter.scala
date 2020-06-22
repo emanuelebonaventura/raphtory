@@ -17,12 +17,15 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
     val json = parse(record.asInstanceOf[String])
 
-
     json.asInstanceOf[JObject].values.get("command") match {
       case Some("EdgeAdd") =>   val edge = json.extract[EdgeJson]
-                          AddNewEdge(edge)
+                                AddNewEdge(edge)
       case Some("VertexAdd")  =>  val vertex = json.extract[VertexJson]
-                            AddNewVertex(vertex)
+                                  AddNewVertex(vertex)
+      case Some("VertexDelete")  =>  val vertex = json.extract[VertexJson]
+                                    DeleteVertex(vertex)
+      case Some("EdgeDelete") =>   val edge = json.extract[EdgeJson]
+                                 DeleteEdge(edge)
       case _          =>   println("message not recognized!")
     }
 
@@ -32,7 +35,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
   def AddNewVertex(vertex:  => VertexJson): Unit = {
     if (vertex.isEmptyMap())  sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType),vertex.layerId))
     else {
-      var pro = List[Property]()
+      var pro = Vector[Property]()
       for ((k,v) <- vertex.properties) {
        v match {
          case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
@@ -59,7 +62,7 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
     if (edge.isEmptyMap()) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType),edge.dstLayerId,edge.srcLayerId))
     else {
-      var pro = List[Property]()
+      var pro = Vector[Property]()
       for ((k,v) <- edge.properties) {
         v match {
           case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
@@ -84,4 +87,28 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
     }
   }
+
+  def DeleteVertex(vertex:  => VertexJson): Unit = {
+      sendGraphUpdate(
+        VertexDelete(
+          vertex.msgTime,
+          vertex.vertexId,
+          vertex.layerId
+        )
+      )
+  }
+
+
+  def DeleteEdge(edge:  => EdgeJson): Unit = {
+    sendGraphUpdate(
+      EdgeDelete(
+        edge.msgTime,
+        edge.srcId,
+        edge.dstId,
+        edge.srcLayerId,
+        edge.dstLayerId
+      )
+    )
+  }
+
 }
