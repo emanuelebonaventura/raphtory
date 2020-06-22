@@ -3,6 +3,7 @@ package com.raphtory.core.components.PartitionManager.Workers
 import akka.actor.Actor
 import akka.actor.ActorRef
 import com.raphtory.core.model.communication._
+import com.raphtory.core.model.graphentities.Vertex
 import com.raphtory.core.storage.EntityStorage
 import com.raphtory.core.utils.Utils
 
@@ -30,7 +31,13 @@ class ArchivistWorker(workers: ParTrieMap[Int, ActorRef], storages: ParTrieMap[I
 
   def compressVertices(compressTime: Long, workerID: Int): Unit = {
     val worker = workers(workerID)
-    storages(workerID).vertices foreach (pair => {
+
+    var vertices : ParTrieMap[Long,Vertex] =  ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storages(workerID).layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+
+    vertices foreach (pair => {
       worker ! CompressVertex(pair._1, compressTime)
       startedCompressions += 1
     })
@@ -38,7 +45,13 @@ class ArchivistWorker(workers: ParTrieMap[Int, ActorRef], storages: ParTrieMap[I
 
   def archiveVertices(compressTime: Long, archiveTime: Long, workerID: Int): Unit = {
     val worker = workers(workerID)
-    storages(workerID).vertices foreach (key => {
+
+    var vertices : ParTrieMap[Long,Vertex] =  ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storages(workerID).layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+
+    vertices foreach (key => {
       if (compressing) worker ! ArchiveVertex(key._1, compressTime, archiveTime)
       else worker ! ArchiveOnlyVertex(key._1, archiveTime)
       startedArchiving += 1

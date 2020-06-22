@@ -31,7 +31,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
   /**
     * Map of vertices contained in the partition
     */
-  val vertices = ParTrieMap[Long, Vertex]()
+  //val vertices = ParTrieMap[Long, Vertex]()
   var baseLayer = new Layer(0,0)
   val layers = ParTrieMap[Long, Layer]()
   layers put(baseLayer.layerID,baseLayer)

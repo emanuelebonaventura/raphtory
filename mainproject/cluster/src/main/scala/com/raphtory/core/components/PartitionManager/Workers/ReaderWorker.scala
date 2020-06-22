@@ -16,6 +16,8 @@ import com.raphtory.core.utils.Utils
 import kamon.Kamon
 import java.util.concurrent.atomic.AtomicInteger
 
+import com.raphtory.core.model.graphentities.Vertex
+
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -145,7 +147,11 @@ class ReaderWorker(managerCountVal: Int, managerID: Int, workerId: Int, storage:
   def handleVertexMessage(req: VertexMessage): Unit = {
     log.debug("ReaderWorker [{}] belonging to Reader [{}] received [{}] request.", managerID, workerId, req)
     incrementReceivedMessages(req.viewJob.jobID)
-    storage.vertices(req.vertexID).multiQueue.receiveMessage(req.viewJob,req.superStep,req.data)
+    var vertices : ParTrieMap[Long,Vertex] =  ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storage.layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+    vertices(req.vertexID).multiQueue.receiveMessage(req.viewJob,req.superStep,req.data)
   }
 
   def setup(analyzer: Analyser, jobID: String, args: Array[String], superStep: Int, timestamp: Long, analysisType: AnalysisType.Value, window: Long, windowSet: Array[Long]) {

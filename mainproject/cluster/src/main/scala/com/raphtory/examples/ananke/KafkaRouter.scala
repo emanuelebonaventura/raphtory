@@ -8,7 +8,6 @@ import com.raphtory.core.model.communication._
 import net.liftweb.json._
 import com.raphtory.examples.ananke.anankejson.VertexJson
 import com.raphtory.examples.ananke.anankejson.EdgeJson
-import org.apache.jute.compiler.JLong
 
 
 
@@ -31,14 +30,13 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
 
   def AddNewVertex(vertex:  => VertexJson): Unit = {
-    if (vertex.isEmptyMap())  sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType)))
+    if (vertex.isEmptyMap())  sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType),vertex.layerId))
     else {
       var pro = List[Property]()
       for ((k,v) <- vertex.properties) {
        v match {
          case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
-         case v : JLong => pro = pro.+:(LongProperty(k,v.extract[Long]))
-         case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Int]))
+         case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
          case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
           case _ => println("No type found!")
         }
@@ -50,7 +48,8 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
           vertex.msgTime,
           vertex.vertexId,
           properties,
-          Type(vertex.vertexType)
+          Type(vertex.vertexType),
+          vertex.layerId
         )
       )
     }
@@ -58,14 +57,13 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
 
   def AddNewEdge(edge: => EdgeJson): Unit = {
 
-    if (edge.isEmptyMap()) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType)))
+    if (edge.isEmptyMap()) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType),edge.dstLayerId,edge.srcLayerId))
     else {
       var pro = List[Property]()
       for ((k,v) <- edge.properties) {
         v match {
           case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
-          case v : JLong => pro = pro.+:(LongProperty(k,v.extract[Long]))
-          case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Int]))
+          case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
           case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
           case _ => println("No type found!")
         }

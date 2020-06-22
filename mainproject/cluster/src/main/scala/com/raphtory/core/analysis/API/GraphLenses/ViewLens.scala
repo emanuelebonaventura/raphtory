@@ -32,7 +32,11 @@ class ViewLens(
   override def getVerticesWithMessages(): ParTrieMap[Long, Vertex] = {
     val timetaken = System.currentTimeMillis()
     if (!messageFilter) {
-      keySetMessages = storage.vertices.filter {
+      var vertices : ParTrieMap[Long,Vertex] =  ParTrieMap[Long,Vertex]()
+      for ((k,layer) <- storage.layers) {
+        vertices = vertices.++(layer.vertices)
+      }
+      keySetMessages = vertices.filter {
         case (id: Long, vertex: Vertex) =>
           vertex.aliveAt(jobID.timestamp) && vertex.multiQueue.getMessageQueue(jobID, superstep).nonEmpty
       }
@@ -45,7 +49,12 @@ class ViewLens(
   override def getVerticesSet(): ParTrieMap[Long, Vertex] = {
     if (firstRun) {
       val timetaken = System.currentTimeMillis()
-      keySet = storage.vertices.filter(v => v._2.aliveAt(jobID.timestamp))
+
+      var vertices : ParTrieMap[Long,Vertex] =  ParTrieMap[Long,Vertex]()
+      for ((k,layer) <- storage.layers) {
+        vertices = vertices.++(layer.vertices)
+      }
+      keySet = vertices.filter(v => v._2.aliveAt(jobID.timestamp))
       firstRun = false
       viewTimer.update(System.currentTimeMillis()-timetaken)
     }

@@ -14,12 +14,26 @@ import scala.collection.parallel.mutable.ParTrieMap
 abstract class GraphLens(jobID: ViewJob, superstep: Int, storage: EntityStorage, managerCount: ManagerCount) {
   private val messages = new AtomicInteger(0)
 
-  protected var voteCount                             = new AtomicInteger(0)
-  def superStep()                                = superstep
-  def getVerticesSet(): ParTrieMap[Long, Vertex] = storage.vertices
+  protected var voteCount = new AtomicInteger(0)
 
-  def getVerticesWithMessages(): ParTrieMap[Long, Vertex] = storage.vertices.filter {
-    case (id: Long, vertex: Vertex) => vertex.multiQueue.getMessageQueue(jobID, superstep).nonEmpty
+  def superStep() = superstep
+
+  def getVerticesSet(): ParTrieMap[Long, Vertex] = {
+    var vertices = new ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storage.layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+    vertices
+  }
+
+  def getVerticesWithMessages(): ParTrieMap[Long, Vertex] = {
+    var vertices = new ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storage.layers) {
+      vertices = vertices.++(layer.vertices.filter {
+                              case (id: Long, vertex: Vertex) => vertex.multiQueue.getMessageQueue(jobID, superstep).nonEmpty
+                          })
+    }
+    vertices
   }
 
   def recordMessage(sourceID: Long, vertexID: Long, data: Any) =
@@ -30,12 +44,22 @@ abstract class GraphLens(jobID: ViewJob, superstep: Int, storage: EntityStorage,
   def getVertex(v: Vertex)(implicit context: ActorContext, managerCount: ManagerCount): VertexVisitor =
     new VertexVisitor(v, jobID, superstep, this)
 
-  def getTotalVerticesSet() =
-    storage.vertices.keySet
+  def getTotalVerticesSet() = {
+    var vertices = new ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storage.layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+    vertices.keySet
+  }
 
   def vertexVoted() =
     voteCount.incrementAndGet()
 
-  def checkVotes(workerID: Int): Boolean =
-    storage.vertices.size == voteCount.get
+  def checkVotes(workerID: Int): Boolean = {
+    var vertices = new ParTrieMap[Long,Vertex]()
+    for ((k,layer) <- storage.layers) {
+      vertices = vertices.++(layer.vertices)
+    }
+    vertices.size == voteCount.get
+  }
 }
