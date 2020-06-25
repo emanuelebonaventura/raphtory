@@ -57,11 +57,11 @@ object Go extends App {
       println("Creating Analysis Manager")
       LiveAnalysisNode(getConf())
     case "clusterUp" =>
-      println("Cluster Up, informing Partition Managers and Routers")
+      println("Cluster Up,YES? informing Partition Managers and Routers")
       WatchDogNode(getConf(), sys.env("PARTITION_MIN").toInt, sys.env("ROUTER_MIN").toInt)
 
     case "singleNodeSetup" =>
-      println("putting up cluster in one node")
+      println("putting up single node setup")
       SingleNodeSetup(
               hostname2Ip(seedLoc),
               routerName,

@@ -20,7 +20,7 @@ class KafkaSpout extends SpoutTrait {
   var offset     = System.getenv().getOrDefault("KAFKA_OFFSET", "earliest").trim
   val x     = new Random().nextLong()
   var groupID   = System.getenv().getOrDefault("KAFKA_GROUP", "group" + x).trim
-  var topic   = System.getenv().getOrDefault("KAFKA_TOPIC", "kafka").trim
+  var topic   = System.getenv().getOrDefault("KAFKA_TOPIC", "raphtory").trim
   var restart   = System.getenv().getOrDefault("RESTART_RATE", "1000").trim
 
   val props = new Properties()

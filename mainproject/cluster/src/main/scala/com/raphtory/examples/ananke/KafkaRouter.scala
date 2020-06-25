@@ -5,19 +5,14 @@ package com.raphtory.examples.ananke
 import com.raphtory.core.components.Router.RouterWorker
 import com.raphtory.core.model.communication.Type
 import com.raphtory.core.model.communication._
-import com.raphtory.examples.ananke.AnankeJson.{EdgeJsonRemove, VertexJsonRemove}
+import com.raphtory.examples.ananke.anankejson._
 import net.liftweb.json._
-import com.raphtory.examples.ananke.anankejson.VertexJson
-import com.raphtory.examples.ananke.anankejson.EdgeJson
-
 
 
 class KafkaRouter(override val routerId: Int,override val workerID:Int, override val initialManagerCount: Int) extends RouterWorker {
   implicit val formats = DefaultFormats
   def parseTuple(record: Any): Unit = {
-
     val json = parse(record.asInstanceOf[String])
-
     json.asInstanceOf[JObject].values.get("command") match {
       case Some("EdgeAdd") =>   val edge = json.extract[EdgeJson]
                                 AddNewEdge(edge)
@@ -39,9 +34,10 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
       var pro = Vector[Property]()
       for ((k,v) <- vertex.properties) {
        v match {
-         case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
-         case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
-         case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
+         case v : net.liftweb.json.JsonAST.JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
+         case v : net.liftweb.json.JsonAST.JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
+         case v : net.liftweb.json.JsonAST.JDouble  => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
+         case v : net.liftweb.json.JsonAST.JNull.type => pro =  pro.+:( StringProperty(k,"null"))
           case _ => println("No type found!")
         }
       }
@@ -66,9 +62,10 @@ class KafkaRouter(override val routerId: Int,override val workerID:Int, override
       var pro = Vector[Property]()
       for ((k,v) <- edge.properties) {
         v match {
-          case v : JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
-          case v : JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
-          case v : JDouble => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
+          case v : net.liftweb.json.JsonAST.JString => pro =  pro.+:( StringProperty(k,v.extract[String]))
+          case v : net.liftweb.json.JsonAST.JInt  => pro = pro.+:(LongProperty(k,v.extract[Long]))
+          case v : net.liftweb.json.JsonAST.JDouble  => pro = pro.+:(DoubleProperty(k,v.extract[Double]))
+          case v : net.liftweb.json.JsonAST.JNull.type => pro =  pro.+:( StringProperty(k,"null"))
           case _ => println("No type found!")
         }
       }

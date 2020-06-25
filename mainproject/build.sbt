@@ -1,5 +1,5 @@
 import com.typesafe.sbt.packager.archetypes.scripts.AshScriptPlugin
-import com.typesafe.sbt.packager.docker.Cmd
+import com.typesafe.sbt.packager.docker.{Cmd, ExecCmd}
 
 val Akka        = "2.5.26"
 val Config      = "1.2.1"
@@ -77,28 +77,23 @@ lazy val basicSettings = Seq(
         parallelExecution in Test := false,
         //resolvers					++= Dependencies.resolutionRepos,
         //resolvers					  ++= kamon_repos,
-        scalacOptions := Seq(
-                "-feature",
-                "-deprecation",
-                "-encoding",
-                "UTF8",
-                "-unchecked"
-        ),
+
         testOptions in Test += Tests.Argument("-oDF"),
         version := "latest"
 )
 
 lazy val dockerStuff = Seq(
-        maintainer := "Ben Steer <b.a.steer@qmul.ac.uk>",
-        dockerBaseImage := "miratepuffin/raphtory-redis:latest",
-        dockerRepository := Some("miratepuffin"),
-        dockerExposedPorts := Seq(2551, 8080, 2552, 1600, 11600,8081)
+        maintainer := "Emanuele Bonaventura <iinsanez@yahoo.it>",
+        dockerBaseImage := "miratepuffin/raphtory-redis",
+        dockerRepository := Some("insanityexe"),
+      dockerExposedPorts := Seq(2551, 8080, 2552, 1600, 11600,8081)
 )
+
 
 lazy val root = Project(id = "raphtory", base = file(".")) aggregate (cluster)
 
-lazy val cluster = project
-  .in(file("cluster"))
+lazy val cluster = (project
+  in file("cluster"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(JavaAgent)
@@ -112,7 +107,8 @@ lazy val cluster = project
   .settings(
           dockerCommands ++= Seq(
                   Cmd("ENV", "PATH=/opt/docker/bin:${PATH}"),
-                  Cmd("RUN", "chmod 755 bin/env-setter.sh")
+                  ExecCmd("RUN", "chmod", "755", "bin/env-setter.sh"),
+
           )
   )
   .settings(basicSettings: _*)

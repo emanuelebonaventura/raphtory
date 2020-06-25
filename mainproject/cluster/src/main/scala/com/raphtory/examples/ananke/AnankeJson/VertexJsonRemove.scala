@@ -1,4 +1,4 @@
-package com.raphtory.examples.ananke.AnankeJson
+package com.raphtory.examples.ananke.anankejson
 
 
 case class VertexJsonRemove(command: String,
