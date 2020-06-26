@@ -18,7 +18,7 @@ class KafkaSpout extends SpoutTrait {
   var offset     = System.getenv().getOrDefault("KAFKA_OFFSET", "earliest").trim
   val x     = new Random().nextLong()
   var groupID   = System.getenv().getOrDefault("KAFKA_GROUP", "group" + x).trim
-  var topic   = System.getenv().getOrDefault("KAFKA_TOPIC", "sample_topic").trim
+  var topic   = System.getenv().getOrDefault("KAFKA_TOPIC", "raphtory").trim
   var restart   = System.getenv().getOrDefault("RESTART_RATE", "1000").trim
 
   val props = new Properties()
@@ -37,10 +37,8 @@ class KafkaSpout extends SpoutTrait {
   }
 
   def consumeFromKafka() = {
-    //println("Consuming")
     val record = consumer.poll(java.time.Duration.ofMillis(1000)).asScala
     for (data <- record.iterator)
-      //println(data.value())
       sendTuple(data.value())
     AllocateSpoutTask(Duration(restart.toInt, MILLISECONDS), "newLine")
   }

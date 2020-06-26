@@ -125,11 +125,14 @@ class EntityStorage(partitionID:Int,workerID: Int) {
 
 
     layers.get(layerId) match {
-      case Some(layer) => vertexSearch(layer)
+      case Some(layer) => {val vertex = vertexSearch(layer)
+                          vertex
+                        }
       case None => {
         val l = new Layer(msgTime, layerId)
         layers put(layerId, l)
-        vertexSearch(l)
+        val vertex = vertexSearch(l)
+        vertex
       }
     }
   }
@@ -179,9 +182,9 @@ class EntityStorage(partitionID:Int,workerID: Int) {
       layerId : Long = 0,
       removeList: mutable.TreeMap[Long, Boolean]
   ): Unit =
-    getVertexOrPlaceholder(msgTime, srcID,layerId).getOutgoingEdge(dstID) match {
+    getVertexOrPlaceholder(msgTime, srcID,layerId = layerId).getOutgoingEdge(dstID) match {
       case Some(edge) => edge killList removeList //add the dst removes into the edge
-      case None       => println("Oh no")
+      case None       => println("Edge not found")
     }
 
   def vertexRemoval(msgTime: Long, srcId: Long,routerID:String,routerTime:Int,layerId : Long = 0):Int = {
@@ -459,7 +462,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
   }
 
   def remoteEdgeRemoval(msgTime: Long, srcId: Long, dstId: Long,routerID:String,routerTime:Int,layerId : Long = 0): Unit = {
-    val dstVertex = getVertexOrPlaceholder(msgTime, dstId,layerId)
+    val dstVertex = getVertexOrPlaceholder(msgTime, dstId, layerId = layerId)
     dstVertex.getIncomingEdge(srcId) match {
       case Some(e) => e kill msgTime
       case None    => println(s"Worker ID $workerID Manager ID $managerID")
@@ -471,7 +474,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
     )
   }
   def remoteEdgeRemovalFromVertex(msgTime: Long, srcId: Long, dstId: Long,routerID:String,routerTime:Int,layerId : Long = 0): Unit = {
-    val dstVertex = getVertexOrPlaceholder(msgTime, dstId,layerId)
+    val dstVertex = getVertexOrPlaceholder(msgTime, dstId, layerId = layerId)
     dstVertex.getIncomingEdge(srcId) match {
       case Some(e) => e kill msgTime
       case None    => println(s"Worker ID $workerID Manager ID $managerID")
@@ -484,7 +487,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
   }
 
   def remoteEdgeRemovalNew(msgTime: Long, srcId: Long, dstId: Long,srcLayerId : Long = 0,dstLayerId : Long = 0, srcDeaths: mutable.TreeMap[Long, Boolean],routerID:String,routerTime:Int): Unit = {
-    val dstVertex = getVertexOrPlaceholder(msgTime, dstId)
+    val dstVertex = getVertexOrPlaceholder(msgTime, dstId, layerId = dstLayerId)
     dstVertex.incrementEdgesRequiringSync()
     copySplitEdgeCount.increment()
     val edge = new SplitEdge(workerID, msgTime, srcId, dstId,srcLayerId,dstLayerId, initialValue = false, getPartition(srcId, managerCount), this)
@@ -498,7 +501,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
 
   def remoteReturnDeaths(msgTime: Long, srcId: Long, dstId: Long, dstDeaths: mutable.TreeMap[Long, Boolean],layerId : Long = 0): Unit = {
     if (printing) println(s"Received deaths for $srcId --> $dstId from ${getManager(dstId, managerCount)}")
-    getVertexOrPlaceholder(msgTime, srcId,layerId).getOutgoingEdge(dstId) match {
+    getVertexOrPlaceholder(msgTime, srcId, layerId = layerId).getOutgoingEdge(dstId) match {
       case Some(edge) => edge killList dstDeaths
       case None       => /*todo Should this happen*/
     }
