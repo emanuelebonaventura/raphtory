@@ -149,7 +149,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processDstAddForOtherWorkerRequest(req: DstAddForOtherWorker): Unit = { //local worker asking this one to deal with an incoming edge
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.vertexWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime,layerId = req.layerId)
+    storage.vertexWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime)
     storage.timings(req.msgTime)
     intraWorkerUpdates.increment()
   }
@@ -192,7 +192,7 @@ class IngestionWorker(workerId: Int,partitionID:Int, storage: EntityStorage) ext
 
   def processDstWipeForOtherWorkerRequest(req: DstWipeForOtherWorker): Unit = {
     log.debug("IngestionWorker [{}] received [{}] request.", workerId, req)
-    storage.vertexWipeWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime,layerId = req.layerId)
+    storage.vertexWipeWorkerRequest(req.msgTime, req.dstID, req.srcForEdge, req.edge, req.present,req.routerID,req.routerTime)
     storage.timings(req.msgTime)
     intraWorkerUpdates.increment()
   }

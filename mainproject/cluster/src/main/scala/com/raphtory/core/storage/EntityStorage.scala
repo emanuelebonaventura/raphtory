@@ -137,14 +137,14 @@ class EntityStorage(partitionID:Int,workerID: Int) {
     }
   }
 
-  def vertexWorkerRequest(msgTime: Long, dstID: Long, srcID: Long, edge: Edge, present: Boolean,routerID:String,routerTime:Int, layerId : Long = 0) = {
-    val dstVertex = vertexAdd(msgTime, dstID, vertexType = null, layerId = layerId) //if the worker creating an edge does not deal with the destination
+  def vertexWorkerRequest(msgTime: Long, dstID: Long, srcID: Long, edge: Edge, present: Boolean,routerID:String,routerTime:Int) = {
+    val dstVertex = vertexAdd(msgTime, dstID, vertexType = null, layerId = edge.getDstLayerId) //if the worker creating an edge does not deal with the destination
     if (!present) {
       dstVertex.incrementEdgesRequiringSync()
       dstVertex addIncomingEdge edge // do the same for the destination node
       mediator ! DistributedPubSubMediator.Send( //if this edge is new
               getManager(srcID, managerCount),
-              DstResponseFromOtherWorker(msgTime, srcID, dstID, dstVertex.removeList, routerID, routerTime, layerId),
+              DstResponseFromOtherWorker(msgTime, srcID, dstID, dstVertex.removeList, routerID, routerTime, edge.getSrcLayerId),
               false
       )
     }
@@ -156,14 +156,14 @@ class EntityStorage(partitionID:Int,workerID: Int) {
       )
   }
 
-  def vertexWipeWorkerRequest(msgTime: Long, dstID: Long, srcID: Long, edge: Edge, present: Boolean,routerID:String,routerTime:Int, layerId: Long = 0) = {
-    val dstVertex = getVertexOrPlaceholder(msgTime, dstID,layerId) // if the worker creating an edge does not deal with do the same for the destination ID
+  def vertexWipeWorkerRequest(msgTime: Long, dstID: Long, srcID: Long, edge: Edge, present: Boolean,routerID:String,routerTime:Int) = {
+    val dstVertex = getVertexOrPlaceholder(msgTime, dstID,edge.getDstLayerId) // if the worker creating an edge does not deal with do the same for the destination ID
     if (!present) {
       dstVertex.incrementEdgesRequiringSync()
       dstVertex addIncomingEdge edge // do the same for the destination node
       mediator ! DistributedPubSubMediator.Send( //as it is new respond with teh deletions
               getManager(srcID, managerCount),
-              DstResponseFromOtherWorker(msgTime, srcID, dstID, dstVertex.removeList,routerID,routerTime, layerId),
+              DstResponseFromOtherWorker(msgTime, srcID, dstID, dstVertex.removeList,routerID,routerTime, edge.getSrcLayerId),
               false
       )
     }
@@ -321,7 +321,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
         }
       } else // if it is a different worker, ask that other worker to complete the dst part of the edge
         mediator ! DistributedPubSubMediator
-          .Send(getManager(dstId, managerCount), DstAddForOtherWorker(msgTime, dstId, srcId, edge, present, routerID:String, routerTime:Int, dstLayerId), true)
+          .Send(getManager(dstId, managerCount), DstAddForOtherWorker(msgTime, dstId, srcId, edge, present, routerID:String, routerTime:Int), true)
 
     if (present) {
       edge revive msgTime //if the edge was previously created we need to revive it
@@ -415,7 +415,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
         }
       } else // if it is a different worker, ask that other worker to complete the dst part of the edge
         mediator ! DistributedPubSubMediator
-          .Send(getManager(dstId, managerCount), DstWipeForOtherWorker(msgTime, dstId, srcId, edge, present, routerID, routerTime,dstLayerId), true)
+          .Send(getManager(dstId, managerCount), DstWipeForOtherWorker(msgTime, dstId, srcId, edge, present, routerID, routerTime), true)
 
     if (present) {
       edge kill msgTime

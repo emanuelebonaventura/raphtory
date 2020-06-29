@@ -62,8 +62,8 @@ case class RemoteReturnDeaths(msgTime: Long, srcID: Long, dstID: Long, kills: mu
 case class ReturnEdgeRemoval(msgTime: Long, srcID: Long, dstID: Long,routerID:String,routerTime:Int,layerId: Long = 0)
 
 //BLOCK FROM WORKER SYNC
-case class DstAddForOtherWorker(msgTime: Long, dstID: Long, srcForEdge: Long, edge: Edge, present: Boolean, routerID: String, routerTime: Int,layerId: Long = 0)
-case class DstWipeForOtherWorker(msgTime: Long, dstID: Long, srcForEdge: Long, edge: Edge, present: Boolean, routerID: String, routerTime: Int, layerId: Long = 0)
+case class DstAddForOtherWorker(msgTime: Long, dstID: Long, srcForEdge: Long, edge: Edge, present: Boolean, routerID: String, routerTime: Int)
+case class DstWipeForOtherWorker(msgTime: Long, dstID: Long, srcForEdge: Long, edge: Edge, present: Boolean, routerID: String, routerTime: Int)
 case class DstResponseFromOtherWorker(msgTime: Long, srcForEdge: Long, dstID: Long, removeList: mutable.TreeMap[Long, Boolean], routerID: String, routerTime: Int, layerId: Long = 0)
 case class EdgeRemoveForOtherWorker(msgTime: Long, srcID: Long, dstID: Long,routerID: String, routerTime: Int,layerId: Long = 0)
 case class EdgeRemovalAfterArchiving(msgTime: Long, srcID: Long, dstID: Long, layerId: Long = 0)
