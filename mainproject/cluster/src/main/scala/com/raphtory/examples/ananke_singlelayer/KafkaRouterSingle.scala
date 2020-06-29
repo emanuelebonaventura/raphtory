@@ -33,7 +33,7 @@ class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, ov
           v match {
             case v: spray.json.JsString => pro = pro.+:(StringProperty(k, v.toString()))
             case v: spray.json.JsNumber => if (v.toString().contains(".")) pro = pro.+:(DoubleProperty(k, v.toString().toDouble))
-            else pro = pro.+:(LongProperty(k, v.toString().toLong))
+                                          else pro = pro.+:(LongProperty(k, v.toString().toLong))
             case v: spray.json.JsNull.type => pro = pro.+:(StringProperty(k, v.toString()))
             case _ => println("No type found!")
           }
@@ -64,7 +64,7 @@ class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, ov
           v match {
             case v: spray.json.JsString => pro = pro.+:(StringProperty(k, v.toString()))
             case v: spray.json.JsNumber => if (v.toString().contains(".")) pro = pro.+:(DoubleProperty(k, v.toString().toDouble))
-            else pro = pro.+:(LongProperty(k, v.toString().toLong))
+                    else pro = pro.+:(LongProperty(k, v.toString().toLong))
             case v: spray.json.JsNull.type => pro = pro.+:(StringProperty(k, v.toString()))
             case _ => println("No type found!")
           }
