@@ -1,31 +1,34 @@
-package com.raphtory.examples.ananke_singlelayer
+package com.raphtory.examples.ananke
+
+
 
 import com.raphtory.core.components.Router.RouterWorker
 import com.raphtory.core.model.communication._
-import com.raphtory.examples.ananke_singlelayer.anankejson._
-import VertexSingleJson._
-import EdgeSingleJson._
-import VertexSingleJsonDelete._
-import EdgeSingleJsonDelete._
+import com.raphtory.examples.ananke.anankejson._
+import VertexMultiJson._
+import EdgeMultiJson._
+import VertexMultiJsonDelete._
+import EdgeMultiJsonDelete._
 import spray.json._
 
 
 
-class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, override val initialManagerCount: Int) extends RouterWorker {
+class KafkaRouter(override val routerId: Int, override val workerID:Int, override val initialManagerCount: Int) extends RouterWorker {
 
 
   def parseTuple(record: Any): Unit = {
+
     val jsonString = record.asInstanceOf[String]
     val json = jsonString.parseJson
-    if (jsonString.contains("VertexAdd")) AddNewVertex(json.convertTo[VertexSingle])
-    else if (jsonString.contains("EdgeAdd")) AddNewEdge(json.convertTo[EdgeSingle])
-    else if (jsonString.contains("VertexDelete")) DeleteVertex(json.convertTo[VertexSingleRemove])
-    else if (jsonString.contains("EdgeDelete")) DeleteEdge(json.convertTo[EdgeSingleRemove])
+    if (jsonString.contains("VertexAdd")) AddNewVertex(json.convertTo[Vertex])
+    else if (jsonString.contains("EdgeAdd")) AddNewEdge(json.convertTo[Edge])
+    else if (jsonString.contains("VertexDelete")) DeleteVertex(json.convertTo[VertexRemove])
+    else if (jsonString.contains("EdgeDelete")) DeleteEdge(json.convertTo[EdgeRemove])
 
   }
 
-  def AddNewVertex(vertex:  => VertexSingle): Unit = {
-    if (vertex.properties.isEmpty) sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType.getOrElse(null))))
+  def AddNewVertex(vertex:  => Vertex): Unit = {
+    if (vertex.properties.isEmpty) sendGraphUpdate(VertexAdd(vertex.msgTime, vertex.vertexId, Type(vertex.vertexType.getOrElse(null)), vertex.layerId.getOrElse(0)))
     else {
       var pro = Vector[Property]()
       vertex.properties getOrElse Map() foreach {
@@ -40,23 +43,25 @@ class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, ov
 
         }
         case _ => println("error")
+
+      }
+          val properties = Properties(pro: _*)
+          sendGraphUpdate(
+            VertexAddWithProperties(
+              vertex.msgTime,
+              vertex.vertexId,
+              properties,
+              Type(vertex.vertexType.getOrElse(null)),
+              vertex.layerId.getOrElse(0)
+            )
+          )
       }
 
-      val properties = Properties(pro: _*)
-      sendGraphUpdate(
-        VertexAddWithProperties(
-          vertex.msgTime,
-          vertex.vertexId,
-          properties,
-          Type(vertex.vertexType.getOrElse(null)),
-        )
-      )
-    }
   }
 
+  def AddNewEdge(edge: => Edge): Unit = {
 
-  def AddNewEdge(edge: => EdgeSingle): Unit = {
-    if (edge.properties.isEmpty) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType.getOrElse(null))))
+    if (edge.properties.isEmpty) sendGraphUpdate(EdgeAdd(edge.msgTime, edge.srcId, edge.dstId, Type(edge.edgeType.getOrElse(null)),edge.dstLayerId.getOrElse(0),edge.srcLayerId.getOrElse(0)))
     else {
       var pro = Vector[Property]()
       edge.properties getOrElse Map() foreach {
@@ -71,10 +76,8 @@ class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, ov
 
         }
         case _ => println("error")
-
       }
-
-      val properties = Properties(pro: _*)
+      val properties =  Properties(pro : _*)
       sendGraphUpdate(
         EdgeAddWithProperties(
           edge.msgTime,
@@ -82,32 +85,34 @@ class KafkaRouterSingle(override val routerId: Int,override val workerID:Int, ov
           edge.dstId,
           properties,
           Type(edge.edgeType.getOrElse(null)),
+          edge.srcLayerId.getOrElse(0),
+          edge.dstLayerId.getOrElse(0)
         )
       )
+
     }
   }
 
-
-  def DeleteVertex(vertex:  => VertexSingleRemove): Unit = {
+  def DeleteVertex(vertex:  => VertexRemove): Unit = {
       sendGraphUpdate(
         VertexDelete(
           vertex.msgTime,
-          vertex.vertexId
+          vertex.vertexId,
+          vertex.layerId.getOrElse(0)
         )
       )
   }
 
 
-  def DeleteEdge(edge:  => EdgeSingleRemove): Unit = {
+  def DeleteEdge(edge:  => EdgeRemove): Unit = {
     sendGraphUpdate(
       EdgeDelete(
         edge.msgTime,
         edge.srcId,
-        edge.dstId
+        edge.dstId,
+        edge.srcLayerId.getOrElse(0),
+        edge.dstLayerId.getOrElse(0)
       )
     )
   }
-
-
-
 }

@@ -6,10 +6,10 @@ case class EdgeSingle(command: String,
                     msgTime: Long,
                     srcId: Long,
                     dstId: Long,
-                    edgeType: String,
-                    properties: Map[String,JsValue])
+                    edgeType: Option[String],
+                    properties: Option[Map[String,JsValue]])
 
 object EdgeSingleJson extends DefaultJsonProtocol {
-  implicit val edgeSingle = jsonFormat6(EdgeSingle)
+  implicit val edgeSingle = jsonFormat6(EdgeSingle.apply)
 }
 

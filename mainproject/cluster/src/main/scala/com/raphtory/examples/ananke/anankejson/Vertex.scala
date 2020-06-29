@@ -1,16 +1,17 @@
-package com.raphtory.examples.ananke_singlelayer.anankejson
+package com.raphtory.examples.ananke.anankejson
 
 import spray.json._
 
-case class VertexSingle(command: String,
+case class Vertex(command: String,
                       msgTime: Long,
                       vertexId: Long,
                       vertexType: Option[String],
+                      layerId: Option[Long],
                       properties: Option[Map[String,JsValue]]
                      )
 
 
-object VertexSingleJson extends DefaultJsonProtocol {
-  implicit val vertexSingle = jsonFormat5(VertexSingle.apply)
+object VertexMultiJson extends DefaultJsonProtocol {
+  implicit val vertexMulti = jsonFormat6(Vertex.apply)
 }
 

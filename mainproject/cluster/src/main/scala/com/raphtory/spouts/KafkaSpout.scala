@@ -14,7 +14,7 @@ import scala.concurrent.duration.SECONDS
 import scala.util.Random
 class KafkaSpout extends SpoutTrait {
   var kafkaServer     = System.getenv().getOrDefault("KAFKA_ADDRESS", "127.0.0.1").trim
-  var kafkaIP     = System.getenv().getOrDefault("KAFKA_PORT", "9092").trim
+  var kafkaIP     = System.getenv().getOrDefault("KAFKA_PORT", "9094").trim
   var offset     = System.getenv().getOrDefault("KAFKA_OFFSET", "earliest").trim
   val x     = new Random().nextLong()
   var groupID   = System.getenv().getOrDefault("KAFKA_GROUP", "group" + x).trim

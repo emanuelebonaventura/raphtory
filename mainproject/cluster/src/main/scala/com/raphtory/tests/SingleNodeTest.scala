@@ -44,7 +44,7 @@ object SingleNodeTest extends App {
     val end =   31525368897000L
 
     val jump =    3600000
-    var SpoutName = "com.raphtory.examples.ananke.KafkaSpout"
+    var SpoutName = "com.raphtory.spouts.KafkaSpout"
     var routerClassName = "com.raphtory.examples.ananke.KafkaRouter"
 
 
