@@ -53,7 +53,9 @@ class EntityStorage(partitionID:Int,workerID: Int) {
   val localEdgeCount       = Kamon.counter("Raphtory_Local_Edge_Count").withTag("actor",s"PartitionWriter_$partitionID").withTag("ID",workerID)
   val copySplitEdgeCount   = Kamon.counter("Raphtory_Copy_Split_Edge_Count").withTag("actor",s"PartitionWriter_$partitionID").withTag("ID",workerID)
   val masterSplitEdgeCount = Kamon.counter("Raphtory_Master_Split_Edge_Count").withTag("actor",s"PartitionWriter_$partitionID").withTag("ID",workerID)
-
+  val layerCount         = Kamon.counter("Raphtory_Layers_Count").withTag("actor",s"PartitionWriter_$partitionID").withTag("ID",workerID)
+  //ADDING LAYER 0
+  layerCount.increment()
 
   def timings(updateTime: Long) = {
     if (updateTime < oldestTime && updateTime > 0) oldestTime = updateTime
@@ -103,6 +105,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
       case Some(l) => vertexSearch(l)
       case None => {
         val l = new Layer(msgTime, layerId)
+        layerCount.increment()
         layers put(layerId, l)
         vertexSearch(l)
       }
@@ -130,6 +133,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
                         }
       case None => {
         val l = new Layer(msgTime, layerId)
+        layerCount.increment()
         layers put(layerId, l)
         val vertex = vertexSearch(l)
         vertex
@@ -207,6 +211,7 @@ class EntityStorage(partitionID:Int,workerID: Int) {
       case Some(l) => vertexSearch(l)
       case None => {
         val l = new Layer(msgTime, layerId)
+        layerCount.increment()
         layers put(layerId, l)
         vertexSearch(l)
       }

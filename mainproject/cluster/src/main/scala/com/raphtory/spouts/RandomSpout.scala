@@ -21,6 +21,7 @@ class RandomSpout extends SpoutTrait {
   protected def ProcessSpoutTask(message: Any): Unit = message match {
     case StartSpout => AllocateSpoutTask(Duration(1, MILLISECONDS), "random")
     case "random" => genRandomCommands(freq / 1000)
+    case "stop"   => stop()
     case _        => println("message not recognized!")
   }
   //context.system.scheduler.scheduleOnce(Duration(1, MINUTES), self, "required")
@@ -28,18 +29,22 @@ class RandomSpout extends SpoutTrait {
   //context.system.scheduler.schedule(Duration(10, SECONDS), Duration(1, MILLISECONDS), self, "random")
 
   def distribution(): String = {
-    val random = Random.nextInt(100)
+    val random = Random.nextFloat()
     if (mode == "multi_layer") {
-      if (random >= 0 && random <= 45) genVertexAddLayer()
-      else if (random >= 45 && random <= 90) genEdgeAddLayer()
-      else if (random > 90 && random <= 95) genVertexRemovalLayer()
+      if (random >= 0 && random <= 0.45) genVertexAddLayer()
+      else if (random >= 0.45 && random <= 0.9) genEdgeAddLayer()
+      else if (random > 0.9 && random <= 0.95) genVertexRemovalLayer()
       else genEdgeRemovalLayer()
     }
-    else {
-      if (random >= 0 && random <= 45) genVertexAdd()
-      else if (random >= 45 && random <=90) genEdgeAdd()
-      else if (random > 85 && random <= 95) genVertexRemoval()
+    else if (mode == "single_layer"){
+      if (random >= 0 && random <= 0.45) genVertexAdd()
+      else if (random >= 0.45 && random <= 0.90) genEdgeAdd()
+      else if (random > 0.9 && random <= 0.95) genVertexRemoval()
       else genEdgeRemoval()
+    }
+    else {
+      AllocateSpoutTask(Duration(1, NANOSECONDS), "stop")
+      "Error"
     }
   }
 
